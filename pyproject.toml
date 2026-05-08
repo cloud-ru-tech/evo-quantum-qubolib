@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+"qubo_lib.problems.well_known_instances" = ["MaxCut.zip"]
+
+[project]
+name = "qubo_lib"
+version = "0.4.0"
+description="Collection of QUBO mappable problems and QUBO solvers"
+authors = [
+    { name="Aleksandr Maltsev", email="avmaltsev@cloud.ru" },
+    { name="Mikhail Remnev", email="maremnev@cloud.ru" }
+]
+license = { file="LICENSE" }
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "ortools",
+    "grpcio",
+    "protobuf>=6.0.0,<7",
+    "jsonpickle",
+    "deepdiff",
+    "numpy",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+gpu = ["cupy-cuda12x",]
+
+[project.scripts]
+run-qubo-server = "qubo_lib.server.qubo_api_server:serve"
