@@ -10,13 +10,13 @@
 
 ### CPU версия 
 ```bash
-pip install git+https://github.com/cloud-ru/evo-quantum-qubolib.git
+pip install git+https://github.com/cloud-ru-tech/evo-quantum-qubolib.git
 ```
 
 ### GPU версия
 Требуется CUDA Toolkit.
 ```bash
-pip install "qubo_lib[gpu]@git+github.com/cloud-ru/evo-quantum-qubolib.git"
+pip install "qubo_lib[gpu]@git+github.com/cloud-ru-tech/evo-quantum-qubolib.git"
 ```
 
 Решим задачу коммивояжера (TSP) двумя разными способами: эвристикой на GPU и полным перебором.
