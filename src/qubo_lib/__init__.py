@@ -3,7 +3,7 @@
 # from .abc import *
 # from .solution import Solution
 # from .state_vectors import StateVectors
-from .remote_solver import RemoteSolver
+# from .remote_solver import RemoteSolver
 
 # библиотека экспортирует наружу:
 # from qubo_lib.problems import TSP
