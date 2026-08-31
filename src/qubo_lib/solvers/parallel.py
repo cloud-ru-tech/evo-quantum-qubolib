@@ -1,6 +1,6 @@
 from ..abc import ProblemABC, SolverABC
 from ..solution import Solution
-from ..solvers import QBF, QB_F1
+from ..solvers import MSSA, QBF, QB_F1
 from .scheduler import devices_scheduler
 from ..state_vectors import StateVectors
 from ..problems import ReducedProblem
@@ -11,7 +11,7 @@ from typing import Type, List
 
 
 # Solver parallelization approaches
-SAMPLER_SOLVERS = dict()  # Parallelize by splitting samples 
+SAMPLER_SOLVERS = dict(MSSA = MSSA)  # Parallelize by splitting samples 
 BRUTEFORCE_SOLVERS = dict(QBF = QBF, QB_F1 = QB_F1)  # Parallelize by bit-fixing decomposition aka Embarrassingly Parallel Enumeration 
 
 SUPPORTED_SOLVERS = dict(**SAMPLER_SOLVERS, **BRUTEFORCE_SOLVERS)
