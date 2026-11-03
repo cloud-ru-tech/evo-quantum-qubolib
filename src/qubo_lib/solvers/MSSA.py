@@ -69,7 +69,51 @@ class MSSA(SolverABC):
             raise ValueError(f"Unknown device name: {device}")
         self.device_name = device
 
-    def solve(self, problem: ProblemABC, samples_cnt=200, epochs_cnt=10, iters_per_epoch=10 ** 6, T=25, rand_seed=42, **kwargs) -> Solution:
+    @staticmethod
+    def get_temperature_range(Q, a, b, epochs_cnt = 2):
+        """
+        Compute initial and final temperatures for simulated annealing
+        based on the given QUBO matrix.
+
+        Temperatures are derived from the Boltzmann formula so that:
+        - At T_init the probability of accepting the maximum possible ΔE is *a*.
+        - At T_final the probability of accepting the minimum non-zero ΔE is *b*.
+
+        Parameters
+        ----------
+        a : float, optional
+            Acceptance probability for max ΔE at T_init, must be in (0, 1).
+        b : float, optional
+            Acceptance probability for min ΔE at T_final, must be in (0, 1).
+
+        Returns
+        -------
+        T_init : float
+            Initial temperature.
+        T_final : float
+            Final temperature.
+        """
+        if not (0 < a < 1):
+            raise ValueError(f"Parameter 'a' must be in (0, 1), got {a}")
+
+        if not (0 < b < 1):
+            raise ValueError(f"Parameter 'b' must be in (0, 1), got {b}")
+
+        Q_sym = (Q + Q.T) / 2.0
+
+        delta_E_max = float(abs(Q_sym).sum(axis=1).max())
+
+        nonzero = abs(Q_sym)[abs(Q_sym) > 0]
+        delta_E_min = float(nonzero.min() if len(nonzero) > 0 else 1e-6)
+
+        T_init = -delta_E_max / np.log(a)
+        T_final = -delta_E_min / np.log(b)
+
+        result = np.geomspace(T_init, T_final, num=epochs_cnt)
+
+        return result
+
+    def solve(self, problem: ProblemABC, samples_cnt=200, epochs_cnt=10, iters_per_epoch=10 ** 6, T=None, rand_seed=42, **kwargs) -> Solution:
         """
         Solve the given QUBO problem using Simulated Annealing approach.
     
@@ -79,23 +123,36 @@ class MSSA(SolverABC):
             epochs_cnt: Number of temperature steps (default: 10)
             iters_per_epoch: Iterations per temperature step (default: 10^6)
                 Thus total SA iterations is = epochs_cnt * iters_per_epoch
-            T: Temperature schedule - scalar or array of length epochs_cnt (default: 25)
+            T: Temperature schedule — scalar or array of length epochs_cnt.
+                If None, temperatures are derived automatically from the
+                QUBO matrix via :meth:`get_temperature_range`. The parameters
+                *a* and *b* can be passed through **kwargs to control the
+                automatic range.
             rand_seed: Random seed for chain initialization and reproducibility (default: 42)
             **kwargs: Additional parameters:
                 device: Device specification ('cpu', 'cuda', 'cuda:0', etc.)
                 need_intrmd_results: Whether to collect all chains intermediate states and energies after every epoch
                 use_metrics: Set of metrics to include in solution ('all' or subset of ['t_arr', 'energy_arr', 'flip_arr', 'time_arr'])
+                a: acceptance probability for max ΔE at T_init (default 0.5).
+                b: acceptance probability for min ΔE at T_final (default 0.001).
                 
         Returns:
             Solution object containing the optimal energy, all samples state vectors and energies, metrics, and metadata about the solving process.
         """        
         # Do not ever use any args in solve(), only kwargs please
 
+        import numpy as np
+
         self.parse_device_arg(**kwargs)
         # logger.debug(f'MSSA.solve(), T={T} 9283652095')
         super_kwargs = kwargs.copy()
         super_kwargs.update(samples_cnt=samples_cnt, epochs_cnt=epochs_cnt, iters_per_epoch=iters_per_epoch, T=T, rand_seed=rand_seed)
         empty_solution = super(MSSA, self).solve(problem, **super_kwargs)
+
+        if T is None:
+            a = kwargs.pop('a', 0.5)
+            b = kwargs.pop('b', 0.001)
+            T = MSSA.get_temperature_range(self.Q, a=a, b=b, epochs_cnt=epochs_cnt)
 
         self.timer.pick_time('start')
         mssa_rez_list = run_MSSA(self.Q, samples_cnt, epochs_cnt, iters_per_epoch, T, rand_seed, need_intrmd_results=kwargs.get('need_intrmd_results', False))

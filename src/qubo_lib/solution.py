@@ -71,7 +71,14 @@ class Solution:
     def __str__(self):
         if self.error:
             return f"Error: {self.error}"
-        best_x_str = ''.join(map(str, self.best_X)) if self.best_X is not None else None
+        if self.best_X is None:
+            best_x_str = None
+        elif self.N > 64:
+            bits = ''.join(map(str, self.best_X))
+            best_x_str = hex(int(bits, 2))
+        else:
+            best_x_str = ''.join(map(str, self.best_X))
+       
         return (
             f"Solution(\n"
             f"  N={self.N},\n"

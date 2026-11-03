@@ -20,6 +20,7 @@ ALL_METRICS = set(['time_arr', 'energy_arr'])
 class QBF(SolverABC):
     """
     O(1) per state bruteforce solver for QUBO problems.
+    https://arxiv.org/pdf/2607.04857
     
     Implements an optimized brute force approach that uses Gray code iteration, prefix-suffix decomposition and cached precomputations.
     Supports both CPU (numpy) and GPU (cupy) computation backends.
