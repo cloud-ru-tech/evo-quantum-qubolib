@@ -1,6 +1,6 @@
 from ..abc import ProblemABC, SolverABC
 from ..solution import Solution
-from ..solvers import MSSA, QBF, QB_F1
+from ..solvers import MSSA, QBF, QB_F1, BnB
 from .scheduler import devices_scheduler
 from ..state_vectors import StateVectors
 from ..problems import ReducedProblem
@@ -12,7 +12,7 @@ from typing import Type, List
 
 # Solver parallelization approaches
 SAMPLER_SOLVERS = dict(MSSA = MSSA)  # Parallelize by splitting samples 
-BRUTEFORCE_SOLVERS = dict(QBF = QBF, QB_F1 = QB_F1)  # Parallelize by bit-fixing decomposition aka Embarrassingly Parallel Enumeration 
+BRUTEFORCE_SOLVERS = dict(QBF = QBF, QB_F1 = QB_F1, BnB = BnB)  # Parallelize by bit-fixing decomposition aka Embarrassingly Parallel Enumeration 
 
 SUPPORTED_SOLVERS = dict(**SAMPLER_SOLVERS, **BRUTEFORCE_SOLVERS)
 
@@ -24,6 +24,7 @@ class Parallel(SolverABC):
     Two parallelization approaches are supported:
     1. Sample splitting (for samplers like MSSA): Total number of samples is equally divided into tasks.
     2. Bit-fixing decomposition (for bruteforces like QBF, QB_F1): k bits are fixed to reduce the problem to splits_cnt = 2^k subproblems of size N-k.
+        Cause BnB is exact solver, there is no sense to parallel it by samples. So it is included to 'brutforcers' set
 
     Parameters:
     -----------
@@ -55,11 +56,11 @@ class Parallel(SolverABC):
         For sampler solvers (MSSA): Work is divided by splitting samples among devices.
         
         Args:
-            solver_type : type, required. Supported values: MSSA, QBF, QB_F1.
+            solver_type : type, required. Supported values: MSSA, QBF, QB_F1, BnB.
 
             splits_cnt : int, required
                 Number of splits to divide total workload.
-                For bruteforce solvers (QBF, QB_F1) must be a power of 2.
+                For bruteforce solvers (QBF, QB_F1) and BnB must be a power of 2.
 
             devices : List of devices to distribute work across (e.g., ['cuda']*2, ['cuda:0', 'cuda:1'], or ['cpu']*8), required          
         """
