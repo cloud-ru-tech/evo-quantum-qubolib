@@ -21,6 +21,7 @@ type_dict = {np.int16: 'short', np.int32: 'int', np.uint16: 'unsigned short', np
 class QB_F1(SolverABC):
     """
     State-of-the-art bruteforce solver for QUBO problems.
+    https://arxiv.org/pdf/2607.04857
     
     Implements an optimized brute force approach that uses Gray code iteration, prefix-suffix decomposition and cached precomputations.
     Only GPU, only np.int16 supported.
@@ -90,10 +91,16 @@ class QB_F1(SolverABC):
         self.timer = PerformanceTimer(self.use_gpu)
         self.parse_device_arg(**kwargs)
 
-        self.N = problem.N
+        cp = self.gimme_lib()
+        Q = problem.build_Q_matrix(use_gpu=self.use_gpu)
+        if Q.dtype != np.int16:
+            raise TypeError('Q dtype only np.int16 supported yet')
+        
+        self.N = max(problem.N, 29)
         self.B = 18
         self.A = self.N - self.B
-        threads_cnt = self.gridDim_x * self.blockDim_x
+        self.Q = cp.zeros((self.N, self.N), dtype=np.int16)
+        self.Q[:problem.N, :problem.N] = Q
 
         self.Q = problem.build_Q_matrix(use_gpu=self.use_gpu)
         if self.Q.dtype != np.int16:
@@ -118,6 +125,7 @@ class QB_F1(SolverABC):
         self.ABBA = (self.Q_0B + self.Q_1A.T) @ X_B.T
         self.timer.pick_time('ABBA')
 
+        threads_cnt = self.gridDim_x * self.blockDim_x
         h_best_E = np.zeros(threads_cnt, dtype=self.energy_type)
         h_best_x_A = np.zeros(threads_cnt, dtype=self.state_type)
         h_best_x_B = np.zeros(threads_cnt, dtype=self.state_type)
